@@ -1,0 +1,11 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "binaryPath": "D:\\citra\\head\\citra-qt.exe",
+            "binaryArgs": ["${workspaceFolder}\\3dsdemo.3dsx"],
+            "MIMode": "gdb",
+            "miDebuggerPath": "D:\\devkitPro\\devkitARM\\bin\\arm-none-eabi-gdb.exe"
+        }
+    ]
+}
