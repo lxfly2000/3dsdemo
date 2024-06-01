@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 {
 	gfxInitDefault();
 
-	PrintConsole topScreen,bottomScreen;
+	PrintConsole /*topScreen,*/bottomScreen;
 	//consoleInit(GFX_TOP, &topScreen);
 	consoleInit(GFX_BOTTOM,&bottomScreen);
 	consoleSelect(&bottomScreen);//选择绘制屏幕
@@ -46,6 +46,11 @@ int main(int argc, char* argv[])
 	printf("\x1b[33mHello, World!\x1b[0m\n");
 	printf("This is ...\n\x1b[31mLF!\x1b[0m\n");
 	printf("This is ...\r\n\x1b[7mCRLF!\x1b[0m\r\n");
+	for(int i=0;i<=7;i++)
+	{
+		printf("\x1b[3%imColor : 3%i\x1b[0m\n",i,i);
+	}
+	printf("Press START to exit.\n");
 
 	C3D_Init(C3D_DEFAULT_CMDBUF_SIZE);
 	C2D_Init(C2D_DEFAULT_MAX_OBJECTS);
