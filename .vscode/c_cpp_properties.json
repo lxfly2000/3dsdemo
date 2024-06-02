@@ -14,7 +14,8 @@
             ],
             "defines": [
                 "_DEBUG",
-                "_UNICODE"
+                "_UNICODE",
+                "__3DS__"
             ],
             "browse": {
                 "path": [
