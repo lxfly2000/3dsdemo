@@ -9,6 +9,7 @@
         }
     ],
     "files.associations": {
-        "citro2d.h": "c"
+        "citro2d.h": "c",
+        "sdl_main.h": "c"
     }
 }

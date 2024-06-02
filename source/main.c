@@ -3,6 +3,8 @@
 #include <string.h>
 #include <3ds.h>
 #include <citro2d.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_main.h>
 
 void printfile(const char* path)
 {
