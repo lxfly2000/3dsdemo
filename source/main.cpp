@@ -140,7 +140,7 @@ int DemoInit()
 	//默认字体是一种只有英文的点阵字体，不推荐中文使用
 	/*if(io.Fonts->AddFontDefault())
 		printf("Failed to load default font.\n");*/
-	if(io.Fonts->AddFontFromFileTTF("romfs:/NotoSansSC-Medium.otf",18.0f*96/72.0f,NULL,char_range.data())==nullptr)
+	if(io.Fonts->AddFontFromFileTTF("romfs:/NotoSansSC-Medium.otf",14.0f*96/72.0f,NULL,char_range.data())==nullptr)
 		printf("Failed to load custom font.\n");
 
     // Setup Dear ImGui style
@@ -235,7 +235,7 @@ int DemoLoop()
 		}else if (event.type == SDL_JOYAXISMOTION){
 			printf("Joy Axis:%d value:%d\n",event.jaxis.axis,event.jaxis.value);
 		}else if (event.type == SDL_KEYDOWN){
-			printf("Key:%#x\n",event.key.keysym.sym);
+			printf("Key:%#lx\n",event.key.keysym.sym);
 		}else if (event.type == SDL_FINGERDOWN){
 			printf("Finger Down x:%f y:%f\n",event.tfinger.x,event.tfinger.y);
 		}else if (event.type == SDL_FINGERMOTION){
@@ -245,9 +245,9 @@ int DemoLoop()
 		}else if (event.type == SDL_CONTROLLERAXISMOTION){
 			printf("Controller Axis:%d value:%d\n",event.caxis.axis,event.caxis.value);
 		}else if (event.type == SDL_MOUSEBUTTONDOWN){
-			printf("Mouse Down x:%d y:%d\n",event.button.x,event.button.y);
+			printf("Mouse Down x:%ld y:%ld\n",event.button.x,event.button.y);
 		}else if (event.type == SDL_MOUSEMOTION){
-			printf("Mouse Motion x:%d y:%d\n",event.motion.x,event.motion.y);
+			printf("Mouse Motion x:%ld y:%ld\n",event.motion.x,event.motion.y);
 		}
     }
 
@@ -274,6 +274,15 @@ int DemoLoop()
 	ImGui::SliderFloat(str_float_value, &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 	ImGui::ColorEdit3(str_clear_color, (float*)&clear_color); // Edit 3 floats representing a color
 
+	if(ImGui::Button(str_exit))
+		DemoBreakLoop();
+	ImGui::SameLine();
+	if(ImGui::Button(str_sound))
+	{
+		printf("Playing audio...\n");
+		Mix_PlayChannel(-1,demo_mus,0);
+	}
+	ImGui::SameLine();
 	if (ImGui::Button(str_button))                            // Buttons return true when clicked (most widgets return true when edited/activated)
 	{
 		counter++;
@@ -281,16 +290,8 @@ int DemoLoop()
 	}
 	ImGui::SameLine();
 	ImGui::Text(str_press_count, counter);
-	ImGui::SameLine();
-	if(ImGui::Button(str_sound))
-	{
-		printf("Playing audio...\n");
-		Mix_PlayChannel(-1,demo_mus,0);
-	}
 
 	ImGui::Text(str_fps_meter, 1000.0f / io.Framerate, io.Framerate);
-	if(ImGui::Button(str_exit))
-		DemoBreakLoop();
 	ImGui::End();
     ImGui::Render();//End ImGUI
 
