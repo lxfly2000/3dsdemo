@@ -58,7 +58,7 @@ ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 #注意顺序，被依赖的库放右边，依赖的库放左边，顺序错的话会报找不到符号的错误
-LIBS	:=	-lSDL2_image -lSDL2_test -lSDL2main -lSDL2 \
+LIBS	:=	-lSDL2_image -lSDL2_ttf -lfreetype -lSDL2_mixer -lxmp -lSDL2main -lSDL2 \
 			-lcitro2d -lcitro3d -lctru -lm
 			
 
@@ -66,6 +66,7 @@ LIBS	:=	-lSDL2_image -lSDL2_test -lSDL2main -lSDL2 \
 # list of directories containing libraries, this must be the top level containing
 # include and lib
 #---------------------------------------------------------------------------------
+#注意把自行安装的库位置加进来
 LIBDIRS	:= $(CTRULIB) $(DEVKITPRO)/portlibs/3ds
 
 

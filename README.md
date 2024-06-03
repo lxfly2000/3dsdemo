@@ -24,6 +24,7 @@ This is a template for starting new 3DS libctru projects.
 在VSCode中打开后按下Ctrl+Shift+P，选择“Task: Run Task”，“run debug”或“run release”
 
 ## SDL库编译选项
+* SDL2_image: `cmake -S. -Bbuild-3ds -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/3DS.cmake" -DCMAKE_BUILD_TYPE=Release -DSDL2IMAGE_VENDORED=ON`
 * SDL2_mixer: `cmake -S. -Bbuild-3ds -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/3DS.cmake" -DCMAKE_BUILD_TYPE=Release -DSDL2MIXER_VENDORED=ON -DSDL2MIXER_DEPS_SHARED=OFF -DBUILD_SHARED_LIBS=OFF -DSDL2MIXER_WAVPACK=OFF -DSDL2MIXER_OPUS=OFF`
   （不支持WAVPACK和OPUS格式）
 * SDL2_ttf: `cmake -S. -Bbuild-3ds -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/3DS.cmake" -DCMAKE_BUILD_TYPE=Release -DSDL2TTF_VENDORED=ON`
