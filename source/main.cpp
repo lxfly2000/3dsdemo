@@ -6,6 +6,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
+#include <SDL2/SDL_keyboard.h>
 #include <3ds.h>
 #include <map>
 #include <set>
@@ -18,10 +19,10 @@ DECLARESTR(str_sample_window,"窗口")\
 DECLARESTR(str_demo_text,"A:选择 B:取消 X:窗口 Y:编辑\nX+摇杆：移动窗口 X+十字键：调整大小")\
 DECLARESTR(str_float_value,"浮点数")\
 DECLARESTR(str_clear_color,"清空颜色")\
-DECLARESTR(str_button,"按钮")\
-DECLARESTR(str_press_count,"按下次数：%d")\
 DECLARESTR(str_sound,"音频")\
-DECLARESTR(str_fps_meter,"帧时间：%.3fms FPS: %.1f FPS")\
+DECLARESTR(str_fps_meter,"FPS: %.1f")\
+DECLARESTR(str_textedit,"文本编辑")\
+DECLARESTR(str_vsync,"V-Sync")\
 DECLARESTR(str_exit,"退出")\
 
 DLIST
@@ -31,9 +32,15 @@ const std::vector<const char*>msglist={DLIST};
 std::vector<ImWchar> char_range = {};
 void ImWcharRangeCalculate(std::vector<ImWchar>&out_range,const std::vector<const char*>&in_list)
 {
-	//基本ASCII：0x20-0xFF
 	std::set<ImWchar>charset;
+	//基本ASCII：0x20-0xFF
 	for(ImWchar c=0x20;c<=0xFF;c++)
+		charset.insert(c);
+	//假名
+	for(ImWchar c=0x3040;c<=0x30FF;c++)
+		charset.insert(c);
+	//全角形式
+	for(ImWchar c=0xFF00;c<=0xFFEF;c++)
 		charset.insert(c);
 	for(size_t i=0;i<in_list.size();i++){
 		size_t wcharlength=mbstowcs(nullptr,in_list[i],0);
@@ -70,6 +77,10 @@ SDL_Texture* demo_texture,*demo_text_texture;
 SDL_Rect demo_texture_rect,demo_text_texture_rect;
 Mix_Chunk* demo_mus;
 TTF_Font* demo_font;
+bool wait_vsync=true;
+char imgui_tedata[32]="你好Hello123";
+char *sdl_input_text=nullptr;
+int text_x=0,text_y=0,text_dx=1,text_dy=1;
 
 char textCN[128],textEN[128];
 void LoadRomFSFiles(const char *path,char *buf,int buflen)
@@ -110,8 +121,6 @@ void DrawTexture(SDL_Renderer *pRenderer,SDL_Texture *tex,int x,int y,int w=0,in
 
 int DemoInit()
 {
-	//由于内存限制，绝对不能一口气把Unicode范围全部加载，只能是用到啥字符就加载啥字符
-	ImWcharRangeCalculate(char_range,msglist);
     if(SDL_Init(SDL_INIT_EVERYTHING))
         return -1;
 #ifdef SDL_HINT_IME_SHOW_UI
@@ -137,6 +146,9 @@ int DemoInit()
 	io.IniFilename=NULL;//不要保存配置文件
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	std::vector<const char*>calcrange=msglist;
+	//由于内存限制，绝对不能一口气把Unicode范围全部加载，只能是用到啥字符就加载啥字符
+	ImWcharRangeCalculate(char_range,calcrange);
 	//默认字体是一种只有英文的点阵字体，不推荐中文使用
 	/*if(io.Fonts->AddFontDefault())
 		printf("Failed to load default font.\n");*/
@@ -187,8 +199,10 @@ int DemoInit()
 	demo_mus=Mix_LoadWAV("romfs:/newrecord.ogg");//几秒甚至不到1秒的音效用LoadWAV，较长的（如BGM）用LoadMUS
 	//加载字体
 	demo_font=TTF_OpenFont("romfs:/NotoSansSC-Medium.otf",18.0f);
-	demo_text_texture=LoadTextToImage(renderer[1],"你好Hello",demo_font,{255,255,0,255});
+	demo_text_texture=LoadTextToImage(renderer[1],imgui_tedata,demo_font,{255,255,0,255});
 	QueryTextureRect(demo_text_texture,&demo_text_texture_rect.w,&demo_text_texture_rect.h);
+
+	text_y=displayBounds[1].h-demo_text_texture_rect.h;
 
     return 0;
 }
@@ -221,7 +235,8 @@ int DemoUninit()
 
 int DemoLoop()
 {
-	gspWaitForVBlank();//等待上一画面更新完毕
+	if(wait_vsync)
+		gspWaitForVBlank();//等待上一画面更新完毕
     SDL_Event event;
     ImGuiIO& io = ImGui::GetIO();
 	//事件处理
@@ -234,20 +249,21 @@ int DemoLoop()
 			printf("Joy Button:%#x\n",event.jbutton.button);
 		}else if (event.type == SDL_JOYAXISMOTION){
 			printf("Joy Axis:%d value:%d\n",event.jaxis.axis,event.jaxis.value);
-		}else if (event.type == SDL_KEYDOWN){
-			printf("Key:%#lx\n",event.key.keysym.sym);
 		}else if (event.type == SDL_FINGERDOWN){
-			printf("Finger Down x:%f y:%f\n",event.tfinger.x,event.tfinger.y);
+			//ImGUI默认不处理触摸事件，把它转换为鼠标事件
+			io.AddMousePosEvent(event.tfinger.x*displayBounds[1].w,event.tfinger.y*displayBounds[1].h);
+			io.AddMouseButtonEvent(0,true);
+		}else if (event.type == SDL_FINGERUP){
+			io.AddMouseButtonEvent(0,false);
 		}else if (event.type == SDL_FINGERMOTION){
-			printf("Finger Motion x:%f y:%f\n",event.tfinger.x,event.tfinger.y);
-		}else if (event.type == SDL_CONTROLLERBUTTONDOWN){
-			printf("Controller Button:%#x\n",event.cbutton.button);
-		}else if (event.type == SDL_CONTROLLERAXISMOTION){
-			printf("Controller Axis:%d value:%d\n",event.caxis.axis,event.caxis.value);
-		}else if (event.type == SDL_MOUSEBUTTONDOWN){
-			printf("Mouse Down x:%ld y:%ld\n",event.button.x,event.button.y);
-		}else if (event.type == SDL_MOUSEMOTION){
-			printf("Mouse Motion x:%ld y:%ld\n",event.motion.x,event.motion.y);
+			io.AddMousePosEvent(event.tfinger.x*displayBounds[1].w,event.tfinger.y*displayBounds[1].h);
+		}else if (event.type == SDL_TEXTINPUT){
+			printf("Input:%s\n",event.text.text);
+			strcpy(sdl_input_text,event.text.text);
+			if(sdl_input_text==imgui_tedata){
+				demo_text_texture=LoadTextToImage(renderer[1],imgui_tedata,demo_font,{255,255,0,255});
+				QueryTextureRect(demo_text_texture,&demo_text_texture_rect.w,&demo_text_texture_rect.h);
+			}
 		}
     }
 
@@ -261,7 +277,6 @@ int DemoLoop()
     ImGui::NewFrame();
 
 	static float f = 0.0f;
-	static int counter = 0;
 	static bool needSetPos=true;
 	if(needSetPos){
 		ImGui::SetNextWindowPos({0.0f,0.0f});
@@ -283,15 +298,16 @@ int DemoLoop()
 		Mix_PlayChannel(-1,demo_mus,0);
 	}
 	ImGui::SameLine();
-	if (ImGui::Button(str_button))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-	{
-		counter++;
-		printf("Counter: %d\n",counter);
-	}
-	ImGui::SameLine();
-	ImGui::Text(str_press_count, counter);
+	ImGui::Checkbox(str_vsync,&wait_vsync);
 
-	ImGui::Text(str_fps_meter, 1000.0f / io.Framerate, io.Framerate);
+	ImGui::Text(str_fps_meter, io.Framerate);
+	ImGui::IsItemFocused();
+	ImGui::InputText(str_textedit,imgui_tedata,sizeof(imgui_tedata),ImGuiInputTextFlags_AutoSelectAll);
+	if(ImGui::IsItemActivated()){
+		sdl_input_text=imgui_tedata;
+		SDL_StartTextInput();
+	}
+	
 	ImGui::End();
     ImGui::Render();//End ImGUI
 
@@ -302,7 +318,14 @@ int DemoLoop()
 
 	//Draw Texture
 	DrawTexture(renderer[1],demo_texture,displayBounds[1].w-demo_texture_rect.w,displayBounds[1].h-demo_texture_rect.h);
-	DrawTexture(renderer[1],demo_text_texture,0,displayBounds[1].h-demo_text_texture_rect.h);
+	DrawTexture(renderer[1],demo_text_texture,text_x,text_y);
+
+	text_x+=text_dx;
+	text_y+=text_dy;
+	if(text_x+demo_text_texture_rect.w>displayBounds[1].w||text_x<0)
+		text_dx=-text_dx;
+	if(text_y+demo_text_texture_rect.h>displayBounds[1].h||text_y<0)
+		text_dy=-text_dy;
 
 	//Draw ImGUI
     ImGui_ImplSDLRenderer2_RenderDrawData(ImGui::GetDrawData());//将ImGui预渲染的内容显示出来
